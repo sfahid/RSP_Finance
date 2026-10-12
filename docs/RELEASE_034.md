@@ -1,0 +1,15 @@
+# Ready Personal Finance — release 0.3.4
+
+Budgets, bills, goals/sinking funds, borrowing/lending records and recurring schedules now expose Edit, Delete and Restore controls. Budget months can be selected, including previous months. Show deleted reveals archived plans; deletion preserves records and posted financial history. Owners/managers can change plans, while viewers remain read-only.
+
+Bill edits preserve partial payments and cannot reduce the total below paid amounts. A paid bill's category cannot change until its payments are corrected/reversed. Deleted bills reject new payments. Goal edits keep reservations; backing accounts cannot change while money is reserved. Goal deletion appends an idempotent reservation release without moving cash; restoration starts with zero reserved money.
+
+Loan metadata edits synchronize the person/agreement name with its posting account and update the due date. Edit opens the latest 50 current financial entries, with View, Edit entry, Reverse and Full ledger actions. Principal, disbursement and repayment corrections use the audited reversal/replacement engine. Direction/account class cannot be overwritten as metadata. Outstanding balances prevent deletion; settled or fully reversed loans can be deleted/restored. Deleted loans reject new direct movements and statement assignments. Their ledgers remain accessible; archived records with newly posted manual-ledger balances still appear in the loan view.
+
+Schedules support name, amount, expense account, frequency, next due date and Running/Paused state. Changes affect future generation; existing bills retain their own amounts and dates. Deleted/paused schedules do not generate bills. Restoring a running schedule resumes catch-up generation from its stored next date.
+
+Migration 007_planning adds archived, row_version and updated_at columns to the five planning tables. Existing records remain active. The owner-only Enable plan editing action runs this repeatable upgrade after the earlier chart/editing tools are enabled; temporary ALTER privileges are needed. Before the upgrade, the app remains usable and management controls are withheld.
+
+All mutations hold the household lock, validate scope, require a reason and current row version, write audit details and use idempotency receipts. Locked budget months are protected. Scheduler/category/account changes update relevant plan versions. Category moves preserve deleted budget amounts, reuse deleted destination slots without adding obsolete amounts and require explicit combination of active budgets. Deleted plans no longer block category archival.
+
+Validation covers metadata edits, deletion/restoration, partial-payment limits, reservation releases, linked loan corrections, dependent repayments, schedule pause/catch-up, optimistic concurrency, retries, roles, household scoping, budget locks and compatibility before enabling the upgrade. Browser validation and test totals are recorded in the supplied update guide. Development uses isolated synthetic data; this package has not been installed on Bluehost.

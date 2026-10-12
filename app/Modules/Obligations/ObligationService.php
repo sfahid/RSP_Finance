@@ -10,7 +10,7 @@ final class ObligationService {
   if(!in_array($direction,['lent','borrowed'],true))throw new Fault('Choose a receivable or payable direction.');
   $class=$direction==='lent'?'asset':'liability';$kind=$direction==='lent'?'receivable':'payable';
   if($ledger['class']!==$class||($ledger['is_group']??0)||!(int)($ledger['active']??1)||(!$old&&($ledger['account_kind']??'')!==$kind))throw new Fault('Choose an active '.$kind.' subaccount.');
-  if($old){if($old['direction']!==$direction)throw new Fault('The account direction does not match.');return $old;}
+  if($old){if(!empty($old['archived']))throw new Fault('Restore this deleted loan before assigning transactions.');if($old['direction']!==$direction)throw new Fault('The account direction does not match.');return $old;}
   $balance=$c->balance($h,(int)$ledger['id']);$remaining=$direction==='lent'?$balance:bcsub('0',$balance,6);
   if(bccomp($remaining,'0',6)<0)throw new Fault('This account has a contrary balance. Correct it before tracking settlements.');
   $uuid=Core::uuid();$c->insert('obligations',['uuid'=>$uuid,'household_id'=>$h,'name'=>$ledger['name'],'direction'=>$direction,'ledger_id'=>$ledger['id'],'original_amount'=>$remaining,'due_date'=>null,'created_at'=>Core::now()]);

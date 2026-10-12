@@ -1,6 +1,6 @@
 # Ready Personal Finance
 
-Working local WAMP release 0.3.3. PHP 8.3+ with PDO MySQL, BCMath, OpenSSL, Fileinfo and Mbstring. MySQL 8.3 was tested on this machine; the ledger targets MySQL 8 or MariaDB 10.6+. Update the installed runtime to a maintained patched release before wider household use.
+Working local WAMP release 0.3.4. PHP 8.3+ with PDO MySQL, BCMath, OpenSSL, Fileinfo and Mbstring. MySQL 8.3 was tested on this machine; the ledger targets MySQL 8 or MariaDB 10.6+. Update the installed runtime to a maintained patched release before wider household use.
 
 ## Run
 
@@ -47,3 +47,7 @@ Archive/restore unwanted uploads, hide reviewed rows, select chart receivables/p
 ## Full account ledgers 0.3.3
 
 Tap an account in Overview or Money to open its complete paged ledger. Categories and chart posting accounts open the same page. Switch accounts, filter dates or descriptions, and follow debit/credit and running balances across pages of 50 without a history cutoff. Search leaves financial totals unchanged. View named journal entries and edit current transactions through the existing correction engine; saving keeps the ledger position and filters. Mobile rows provide large View/Edit buttons, and Back returns to the originating dashboard. See `docs/RELEASE_033.md`. Fully enabled 0.3.2 installations require no new migration.
+
+## Plan management 0.3.4
+
+Budgets, bills, goals, loans/lending and recurring schedules support Edit, reversible Delete and Restore. Owners enable migration 007 using Enable plan editing in any plan screen after enabling the chart and editing tools. Bill payments and journal history remain intact. Goal deletion releases reservations; loan deletion requires a zero balance. Loan amount/payment changes use linked financial-entry corrections. Schedules can be paused and edited without changing existing bills. See `docs/RELEASE_034.md` and the Readysols update guide.

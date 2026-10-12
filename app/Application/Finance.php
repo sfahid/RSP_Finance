@@ -13,7 +13,7 @@ final class Finance {
    switch($kind){
    case 'account':(new AccountService($c))->create($h,$u,$p,$uuid);break;
    case 'bill':(new BillService($c))->create($h,$u,$p,$uuid);break;
-   case 'budget':(new BudgetService($c))->create($h,$u,$p,$uuid);break;
+   case 'budget':$uuid=(new BudgetService($c))->create($h,$u,$p,$uuid);break;
    case 'fund':(new FundService($c))->create($h,$u,$p,$uuid);break;
    case 'member':(new MemberService($c))->create($h,$u,$p,$uuid);break;
    case 'category':(new CategoryService($c))->create($h,$u,$p,$uuid);break;

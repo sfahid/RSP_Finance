@@ -47,3 +47,4 @@
 
 .ledger-date-caption{margin:4px 0 0}.ledger-controls details summary{min-height:44px;padding:10px 0;color:var(--green)}.ledger-page-count{padding:12px 0;margin:0}.ledger-entries>.caption{line-height:1.6}
 body:has(.ledger-back) .install-app{display:none}
+.plan-toolbar,.plan-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.plan-actions .btn{flex:1;min-height:48px}.plan-card h2,.plan-entry strong{overflow-wrap:anywhere}.plan-entry{padding:16px 0;border-bottom:1px solid var(--line)}.plan-entry strong,.plan-entry small{display:block}.plan-entry small{margin-top:8px;color:var(--muted);line-height:1.6}.plan-toolbar .btn{min-height:48px}#f-plan_month{max-width:320px}body:has(.plan-toolbar) .install-app{display:none}

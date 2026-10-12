@@ -16,6 +16,7 @@ final class Http {
    if($route==='logout'&&$method==='POST'){$_SESSION=[];session_regenerate_id(true);self::json(['ok'=>true]);return;}
    if($route==='transaction-details'&&$method==='GET'){self::json((new TransactionEditingService($c))->details($h,(string)($_GET['uuid']??'')));return;}
    if($route==='account-ledger'&&$method==='GET'){self::json((new LedgerService($c))->view($h,$_GET));return;}
+   if($route==='plan-details'&&$method==='GET'){self::json((new PlanManagementService($c))->details($h,(string)($_GET['kind']??''),(string)($_GET['uuid']??'')));return;}
    if(in_array($route,['chart','chart-ledger'],true)&&$method==='GET'){$chart=new ChartService($c);$from=(string)($_GET['from']??substr($c->today($h),0,4).'-01-01');$to=(string)($_GET['to']??$c->today($h));self::json($route==='chart'?$chart->report($h,$from,$to):$chart->ledger($h,(string)($_GET['uuid']??''),$from,$to));return;}
    if(in_array($route,['imports','import-view'],true)&&$method==='GET'){if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow statement imports.',403);$i=new ImportService($c);self::json($route==='imports'?$i->listing($h,($_GET['archived']??'0')==='1'):$i->view($h,(string)($_GET['uuid']??'')));return;}
    if($route==='snapshot'&&$method==='GET'){self::json($f->snapshot($h,$user));return;}
@@ -23,6 +24,8 @@ final class Http {
    if($method!=='POST')throw new Fault('Unknown route.',404);if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow this action.',403);
    $key=$_SERVER['HTTP_IDEMPOTENCY_KEY']??'';
    switch($route){
+    case 'planning-upgrade':if($user['role']!=='owner')throw new Fault('Only the owner can enable plan editing.',403);$r=(new PlanManagementService($c))->upgrade();break;
+    case 'plan-change':$r=(new PlanManagementService($c))->change($h,$uid,$p,$key);break;
     case 'editing-upgrade':if($user['role']!=='owner')throw new Fault('Only the owner can enable editing tools.',403);$r=(new AccountManagementService($c))->upgrade();break;
     case 'account-update':$r=(new AccountManagementService($c))->update($h,$uid,$p,$key,true);break;
     case 'ledger-update':$r=(new AccountManagementService($c))->update($h,$uid,$p,$key);break;
