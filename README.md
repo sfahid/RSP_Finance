@@ -1,6 +1,6 @@
 # Ready Personal Finance
 
-Working local WAMP release 0.3.0. PHP 8.3+ with PDO MySQL, BCMath, OpenSSL, Fileinfo and Mbstring. MySQL 8.3 was tested on this machine. Update the installed runtime to a maintained patched release before wider household use.
+Working local WAMP release 0.3.1. PHP 8.3+ with PDO MySQL, BCMath, OpenSSL, Fileinfo and Mbstring. MySQL 8.3 was tested on this machine. Update the installed runtime to a maintained patched release before wider household use.
 
 ## Run
 
@@ -31,3 +31,11 @@ Financial changes use exact decimal arithmetic; UI formatting alone uses JavaScr
 ## Validation
 
 See `tests/integration.php` for isolated accounting fixtures. Tests must use a separate database and never add synthetic data to the production household. Source control and database backups are independent recovery mechanisms.
+
+## Account management and transaction corrections
+
+Release 0.3.1 separates Record expense / Record income from account creation, adds Edit details and Archive / Restore for money accounts, Edit name and Archive / Restore for chart leaves/groups, and Move entries for income/expense categories. Money account types may change within the asset class; credit-card classification stays fixed. Financial history and report balances survive archives. Main headings and required system accounts remain protected.
+
+Owners enable migration 006 through Enable editing & review tools after enabling the chart. Edit an existing transaction from Money: income, expenses, refunds, transfers, bills, principal loans, opening balances and balanced journals use atomic reversal-and-replacement corrections. The original remains linked to its replacement; closed periods require reopening and concurrent edits/retries are guarded. Statement-matched cash amount and date stay unchanged while classification and notes can be corrected. Attachments follow the replacement.
+
+Uncategorized income / expense are selectable posting subaccounts. Money → Needs review includes entries and journals using them, within the newest 500 transaction records. Current views hide superseded originals and reversal entries; Show correction history exposes them. Category moves handle at most 100 current entries as one atomic correction, preserve split details and cash balances, move plans, and optionally archive the source. Unlock affected periods before moving and explicitly choose Combine budgets if needed.

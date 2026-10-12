@@ -14,6 +14,7 @@ final class Http {
    if($route==='login'&&$method==='POST'){$email=strtolower(trim((string)($p['email']??'')));$key=hash('sha256',($_SERVER['REMOTE_ADDR']??'').'|'.$email);$a=$c->one('SELECT attempts,UNIX_TIMESTAMP(last_at) stamp FROM login_attempts WHERE key_hash=?',[$key]);if($a&&$a['attempts']>=8&&time()-$a['stamp']<900)throw new Fault('Too many attempts. Try again in 15 minutes.',429);$u=$c->one('SELECT u.*,m.household_id,m.role FROM users u JOIN household_memberships m ON m.user_id=u.id AND m.active=1 WHERE u.email=? LIMIT 1',[$email]);if(!$u||!password_verify((string)($p['password']??''),$u['password_hash'])){$c->query('INSERT INTO login_attempts VALUES(?,1,UTC_TIMESTAMP(6)) ON DUPLICATE KEY UPDATE attempts=IF(last_at<UTC_TIMESTAMP()-INTERVAL 15 MINUTE,1,attempts+1),last_at=UTC_TIMESTAMP(6)',[$key]);throw new Fault('Email or password is incorrect.',401);}$c->query('DELETE FROM login_attempts WHERE key_hash=?',[$key]);session_regenerate_id(true);$_SESSION['uid']=$u['id'];$_SESSION['hid']=$u['household_id'];self::json(['ok'=>true]);return;}
    if(!isset($_SESSION['uid'],$_SESSION['hid']))throw new Fault('Please sign in.',401);$h=(int)$_SESSION['hid'];$uid=(int)$_SESSION['uid'];$user=$c->one('SELECT u.*,m.role FROM users u JOIN household_memberships m ON m.user_id=u.id WHERE u.id=? AND m.household_id=? AND m.active=1',[$uid,$h]);if(!$user)throw new Fault('Access was revoked.',403);
    if($route==='logout'&&$method==='POST'){$_SESSION=[];session_regenerate_id(true);self::json(['ok'=>true]);return;}
+   if($route==='transaction-details'&&$method==='GET'){self::json((new TransactionEditingService($c))->details($h,(string)($_GET['uuid']??'')));return;}
    if(in_array($route,['chart','chart-ledger'],true)&&$method==='GET'){$chart=new ChartService($c);$from=(string)($_GET['from']??substr($c->today($h),0,4).'-01-01');$to=(string)($_GET['to']??$c->today($h));self::json($route==='chart'?$chart->report($h,$from,$to):$chart->ledger($h,(string)($_GET['uuid']??''),$from,$to));return;}
    if(in_array($route,['imports','import-view'],true)&&$method==='GET'){if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow statement imports.',403);$i=new ImportService($c);self::json($route==='imports'?$i->listing($h):$i->view($h,(string)($_GET['uuid']??'')));return;}
    if($route==='snapshot'&&$method==='GET'){self::json($f->snapshot($h,$user));return;}
@@ -21,6 +22,11 @@ final class Http {
    if($method!=='POST')throw new Fault('Unknown route.',404);if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow this action.',403);
    $key=$_SERVER['HTTP_IDEMPOTENCY_KEY']??'';
    switch($route){
+    case 'editing-upgrade':if($user['role']!=='owner')throw new Fault('Only the owner can enable editing tools.',403);$r=(new AccountManagementService($c))->upgrade();break;
+    case 'account-update':$r=(new AccountManagementService($c))->update($h,$uid,$p,$key,true);break;
+    case 'ledger-update':$r=(new AccountManagementService($c))->update($h,$uid,$p,$key);break;
+    case 'transaction-edit':$r=(new TransactionEditingService($c))->edit($h,$uid,$p,$key);break;
+    case 'category-move':$r=(new TransactionEditingService($c))->moveCategory($h,$uid,$p,$key);break;
     case 'chart-upgrade':if($user['role']!=='owner')throw new Fault('Only the owner can enable the chart.',403);$r=(new ChartService($c))->upgrade();break;
     case 'chart-create':$r=(new ChartService($c))->create($h,$uid,$p,$key);break;
     case 'journal':$r=(new Accounting($c))->postJournal($h,$uid,$p,$key);break;

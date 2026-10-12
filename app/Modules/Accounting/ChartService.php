@@ -11,7 +11,7 @@ final class ChartService {
  }
  public function attach(int $h,int $ledger,string $parentUuid='',string $kind='general'):void {
   if(!$this->ready()){if($parentUuid!=='')throw new Fault('Enable the chart of accounts first.');return;}$c=$this->c;$leaf=$c->one('SELECT * FROM ledger_accounts WHERE household_id=? AND id=?',[$h,$ledger]);$roots=$this->roots($h);$parent=$parentUuid!==''?$c->scope('ledger_accounts',$parentUuid,$h):$c->one('SELECT * FROM ledger_accounts WHERE household_id=? AND id=?',[$h,$roots[in_array($kind,['receivable','payable'],true)?$kind:$leaf['class']]]);
-  if(!$parent['is_group']||$parent['class']!==$leaf['class']||$parent['id']===$ledger)throw new Fault('Choose a parent group in the same account class.');
+  if(!(int)($parent['active']??1))throw new Fault('Restore the parent group first.');if(!$parent['is_group']||$parent['class']!==$leaf['class']||$parent['id']===$ledger)throw new Fault('Choose a parent group in the same account class.');
   $ancestor=$parent;$depth=0;while($ancestor){if(++$depth>20)throw new Fault('Use at most 20 levels of account groups.');$ancestor=$ancestor['parent_id']?$c->one('SELECT parent_id FROM ledger_accounts WHERE household_id=? AND id=?',[$h,$ancestor['parent_id']]):null;}
   $c->query('UPDATE ledger_accounts SET parent_id=?,account_kind=? WHERE household_id=? AND id=?',[$parent['id'],$kind,$h,$ledger]);
  }
