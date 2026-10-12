@@ -1,0 +1,2 @@
+CREATE TABLE command_receipts (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, household_id BIGINT UNSIGNED NOT NULL, command_key VARCHAR(220) NOT NULL, payload_hash CHAR(64) NOT NULL, result_json JSON NOT NULL, created_at DATETIME(6) NOT NULL, UNIQUE(household_id,command_key), FOREIGN KEY(household_id) REFERENCES households(id)) ENGINE=InnoDB;
+INSERT INTO schema_migrations VALUES ('002_commands', UTC_TIMESTAMP(6));
