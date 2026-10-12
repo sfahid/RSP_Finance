@@ -18,6 +18,7 @@ final class ImportService {
  }
  public function map(int $h,int $u,string $uuid,array $map,string $dateFormat):array {
   $this->requireReady();$c=$this->c;$c->atomic(function()use($c,$h,$u,$uuid,$map,$dateFormat){$batch=$c->scope('import_batches',$uuid,$h,true);
+   if($batch['status']==='archived')throw new Fault('Restore this statement before changing its mapping.',409);
    if($c->query("SELECT COUNT(*) FROM import_rows WHERE batch_id=? AND status<>'pending'",[$batch['id']])->fetchColumn()>0)throw new Fault('This batch has reviewed rows. Upload again to change its mapping.');
    $source=json_decode($batch['source_json'],true,64,JSON_THROW_ON_ERROR);$normal=[];
    foreach(['date','description','reference','debit','credit','amount','balance','direction'] as $key){$i=$map[$key]??-1;if(!is_numeric($i)||((int)$i)<-1||((int)$i)>=count($source['headers']))throw new Fault('Invalid column mapping.');$normal[$key]=(int)$i;}
@@ -40,8 +41,19 @@ final class ImportService {
    $c->query("UPDATE import_batches SET mapping_json=?,status='ready' WHERE id=?",[json_encode(['columns'=>$normal,'date_format'=>$dateFormat],JSON_THROW_ON_ERROR),$batch['id']]);$c->audit($h,$u,'statement.mapped',$uuid);
   });return $this->view($h,$uuid);
  }
- public function listing(int $h):array {
-  if(!$this->ready())return ['ready'=>false,'batches'=>[]];return ['ready'=>true,'batches'=>$this->c->all('SELECT b.uuid,b.filename,b.sheet,b.status,b.created_at,a.name account_name FROM import_batches b JOIN accounts a ON a.id=b.account_id WHERE b.household_id=? ORDER BY b.id DESC LIMIT 50',[$h])];
+ public function listing(int $h,bool $archived=false):array {
+  if(!$this->ready())return ['ready'=>false,'batches'=>[],'settlement_accounts'=>[]];$c=$this->c;
+  $chart=(new ChartService($c))->ready();$editing=(new AccountManagementService($c))->ready();
+  $targets=$chart?$c->all("SELECT l.uuid,l.name,l.account_kind,o.uuid obligation_uuid,COALESCE(o.direction,IF(l.account_kind='receivable','lent','borrowed')) direction FROM ledger_accounts l LEFT JOIN obligations o ON o.ledger_id=l.id AND o.household_id=l.household_id WHERE l.household_id=? AND l.is_group=0 ".($editing?'AND l.active=1 ':'')."AND ((l.account_kind='receivable' AND l.class='asset') OR (l.account_kind='payable' AND l.class='liability') OR (o.direction='lent' AND l.class='asset') OR (o.direction='borrowed' AND l.class='liability')) ORDER BY l.name,l.id",[$h]):$c->all('SELECT l.uuid,l.name,o.uuid obligation_uuid,o.direction FROM obligations o JOIN ledger_accounts l ON l.id=o.ledger_id AND l.household_id=o.household_id WHERE o.household_id=? ORDER BY l.name',[$h]);
+  return ['ready'=>true,'chart_ready'=>$chart,'archived'=>$archived,'settlement_accounts'=>$targets,'batches'=>$c->all("SELECT b.uuid,b.filename,b.sheet,b.status,b.created_at,a.name account_name,(SELECT COUNT(*) FROM import_rows r WHERE r.batch_id=b.id AND r.household_id=b.household_id AND r.status='pending') pending_rows FROM import_batches b JOIN accounts a ON a.id=b.account_id AND a.household_id=b.household_id WHERE b.household_id=? AND b.status".($archived?"='archived'":"<>'archived'")." ORDER BY b.id DESC LIMIT 100",[$h])];
+ }
+ public function archive(int $h,int $u,string $uuid,bool $restore=false):array {
+  $this->requireReady();$c=$this->c;return $c->atomic(function()use($c,$h,$u,$uuid,$restore){
+   $c->one('SELECT id FROM households WHERE id=? FOR UPDATE',[$h]);$batch=$c->scope('import_batches',$uuid,$h,true);
+   if($restore&&$batch['status']==='archived'){$pending=$c->query("SELECT COUNT(*) FROM import_rows WHERE household_id=? AND batch_id=? AND status='pending'",[$h,$batch['id']])->fetchColumn();$status=$batch['mapping_json']?($pending?'reviewing':'complete'):'uploaded';}
+   elseif(!$restore&&$batch['status']!=='archived')$status='archived';else return ['ok'=>true];
+   $c->query('UPDATE import_batches SET status=? WHERE household_id=? AND id=?',[$status,$h,$batch['id']]);$c->audit($h,$u,$restore?'statement.restored':'statement.archived',$uuid,['previous_status'=>$batch['status']]);return ['ok'=>true];
+  });
  }
  public function view(int $h,string $uuid):array {
   $this->requireReady();$c=$this->c;$b=$c->scope('import_batches',$uuid,$h);$source=json_decode($b['source_json'],true,64,JSON_THROW_ON_ERROR);$account=$c->one('SELECT * FROM accounts WHERE household_id=? AND id=?',[$h,$b['account_id']]);
@@ -58,7 +70,10 @@ final class ImportService {
  }
  public function commit(int $h,int $u,string $uuid,array $choices,bool $acknowledged):array {
   $this->requireReady();if(!$acknowledged)throw new Fault('Confirm that you checked dates, balances and classifications.');if(count($choices)<1||count($choices)>100)throw new Fault('Review between 1 and 100 rows at a time.');
-  $c=$this->c;$result=$c->atomic(function()use($c,$h,$u,$uuid,$choices){$c->one('SELECT id FROM households WHERE id=? FOR UPDATE',[$h]);$batch=$c->scope('import_batches',$uuid,$h,true);$account=$c->one('SELECT * FROM accounts WHERE id=? AND household_id=?',[$batch['account_id'],$h]);$counts=['posted'=>0,'matched'=>0,'skipped'=>0,'duplicates'=>0];$ids=[];
+  $c=$this->c;$result=$c->atomic(function()use($c,$h,$u,$uuid,$choices){$c->one('SELECT id FROM households WHERE id=? FOR UPDATE',[$h]);$batch=$c->scope('import_batches',$uuid,$h,true);if($batch['status']==='archived')throw new Fault('Restore this statement before posting any rows.',409);$account=$c->one('SELECT * FROM accounts WHERE id=? AND household_id=?',[$batch['account_id'],$h]);$counts=['posted'=>0,'matched'=>0,'skipped'=>0,'duplicates'=>0];$ids=[];
+   // Bank exports may be newest first. Apply older selected movements before repayments.
+   $dates=[];foreach($choices as $choice){$id=(int)($choice['id']??0);$row=$c->one('SELECT effective_date FROM import_rows WHERE household_id=? AND batch_id=? AND id=?',[$h,$batch['id'],$id]);if(!$row)throw new Fault('Statement row does not belong to this household.',404);$dates[$id]=$row['effective_date']??'';}
+   usort($choices,fn($a,$b)=>strcmp($dates[(int)$a['id']],$dates[(int)$b['id']]));
    foreach($choices as $choice){$id=(int)($choice['id']??0);if(isset($ids[$id]))throw new Fault('A row was selected twice.');$ids[$id]=true;$r=$c->one('SELECT * FROM import_rows WHERE household_id=? AND batch_id=? AND id=? FOR UPDATE',[$h,$batch['id'],$id]);if(!$r)throw new Fault('Statement row does not belong to this household.',404);if($r['status']!=='pending')continue;$type=$choice['type']??'skip';
     $existing=$r['fingerprint']?$c->one('SELECT * FROM import_links WHERE household_id=? AND account_id=? AND fingerprint=?',[$h,$account['id'],$r['fingerprint']]):null;
     if($existing){$c->query("UPDATE import_rows SET status='duplicate',transaction_id=? WHERE id=?",[$existing['transaction_id'],$id]);$counts['duplicates']++;continue;}
@@ -69,8 +84,12 @@ final class ImportService {
      $p=['type'=>$type,'date'=>$r['effective_date'],'description'=>$r['description'],'amount'=>$r['amount'],'account_uuid'=>$account['uuid']];
      if(in_array($type,['expense','income','refund'],true))$p['category_uuid']=$choice['category_uuid']??'';
      if($type==='transfer'){$other=$c->scope('accounts',(string)($choice['other_account_uuid']??''),$h);if($other['id']===$account['id'])throw new Fault('Choose another account for transfers.');if($r['direction']==='in'){$p['account_uuid']=$other['uuid'];$p['to_account_uuid']=$account['uuid'];}else $p['to_account_uuid']=$other['uuid'];}
-     if(in_array($type,['borrow','lend','repay','collect'],true))$p['obligation_uuid']=$choice['obligation_uuid']??'';
+     if(in_array($type,['borrow','lend','repay','collect'],true)){
+      if(!empty($choice['ledger_uuid'])){$debt=(new ObligationService($c))->track($h,$u,(string)$choice['ledger_uuid'],in_array($type,['lend','collect'],true)?'lent':'borrowed');$p['obligation_uuid']=$debt['uuid'];}
+      else $p['obligation_uuid']=$choice['obligation_uuid']??'';
+     }
      $t=(new Accounting($c))->postInTransaction($h,$u,$p,'bank:'.$account['uuid'].':'.$r['fingerprint']);$status='posted';
+     if(in_array($type,['borrow','lend'],true))$c->query('UPDATE obligations SET original_amount=original_amount+? WHERE household_id=? AND uuid=?',[$r['amount'],$h,$p['obligation_uuid']]);
     }
     if($c->one('SELECT transaction_id FROM import_links WHERE household_id=? AND account_id=? AND transaction_id=?',[$h,$account['id'],$t['id']]))throw new Fault('This bank entry is already linked to another statement row. Check the earlier import or skip this row.');
     $c->insert('import_links',['household_id'=>$h,'account_id'=>$account['id'],'fingerprint'=>$r['fingerprint'],'transaction_id'=>$t['id'],'batch_id'=>$batch['id']]);$c->query('UPDATE import_rows SET status=?,transaction_id=? WHERE id=?',[$status,$t['id'],$id]);$counts[$status]++;

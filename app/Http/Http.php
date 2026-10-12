@@ -16,7 +16,7 @@ final class Http {
    if($route==='logout'&&$method==='POST'){$_SESSION=[];session_regenerate_id(true);self::json(['ok'=>true]);return;}
    if($route==='transaction-details'&&$method==='GET'){self::json((new TransactionEditingService($c))->details($h,(string)($_GET['uuid']??'')));return;}
    if(in_array($route,['chart','chart-ledger'],true)&&$method==='GET'){$chart=new ChartService($c);$from=(string)($_GET['from']??substr($c->today($h),0,4).'-01-01');$to=(string)($_GET['to']??$c->today($h));self::json($route==='chart'?$chart->report($h,$from,$to):$chart->ledger($h,(string)($_GET['uuid']??''),$from,$to));return;}
-   if(in_array($route,['imports','import-view'],true)&&$method==='GET'){if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow statement imports.',403);$i=new ImportService($c);self::json($route==='imports'?$i->listing($h):$i->view($h,(string)($_GET['uuid']??'')));return;}
+   if(in_array($route,['imports','import-view'],true)&&$method==='GET'){if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow statement imports.',403);$i=new ImportService($c);self::json($route==='imports'?$i->listing($h,($_GET['archived']??'0')==='1'):$i->view($h,(string)($_GET['uuid']??'')));return;}
    if($route==='snapshot'&&$method==='GET'){self::json($f->snapshot($h,$user));return;}
    if($route==='document'&&$method==='GET'){$d=$c->scope('documents',$_GET['uuid']??'',$h);$file=$c->config['storage'].'/documents/'.$d['storage_key'];if(!is_file($file))throw new Fault('The file is unavailable.',404);header('Content-Type: '.$d['mime']);header('Content-Disposition: attachment; filename="'.rawurlencode($d['filename']).'"');readfile($file);return;}
    if($method!=='POST')throw new Fault('Unknown route.',404);if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow this action.',403);
@@ -34,6 +34,9 @@ final class Http {
     case 'import-upload':$r=(new ImportService($c))->upload($h,$uid,$_FILES['file']??[],(string)($p['account_uuid']??''),(string)($p['sheet']??''));break;
     case 'import-map':$r=(new ImportService($c))->map($h,$uid,(string)($p['uuid']??''),$p['mapping']??[],(string)($p['date_format']??'dmy'));break;
     case 'import-commit':$r=(new ImportService($c))->commit($h,$uid,(string)($p['uuid']??''),$p['choices']??[],($p['acknowledged']??false)===true);break;
+    case 'import-archive':$r=(new ImportService($c))->archive($h,$uid,(string)($p['uuid']??''));break;
+    case 'import-restore':$r=(new ImportService($c))->archive($h,$uid,(string)($p['uuid']??''),true);break;
+    case 'import-party-create':$r=(new ObligationService($c))->createParty($h,$uid,$p,$key);break;
     case 'transaction':$r=(new Accounting($c))->post($h,$uid,$p,$key);break;
     case 'reverse':$r=(new Accounting($c))->reverse($h,$uid,$p['uuid']??'',Core::date($p['date']??''),Core::text($p['reason']??'',400),$key);break;
     case 'create':$r=$f->create($h,$uid,$p['kind']??'',$p,$key);break;

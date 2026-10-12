@@ -32,6 +32,7 @@ final class Accounting {
    $liability=$account['type']==='credit_card';$lines=[$line((int)$account['ledger_id'],$liability?'0':$amount,$liability?$amount:'0'),$line($c->system($h,'opening_equity'),$liability?$amount:'0',$liability?'0':$amount)];
   }elseif(in_array($type,['borrow','lend','repay','collect'],true)){
    $debt=$c->scope('obligations',(string)($p['obligation_uuid']??''),$h,true);$borrowed=$debt['direction']==='borrowed';
+   $debtLedger=$c->one('SELECT * FROM ledger_accounts WHERE household_id=? AND id=?',[$h,$debt['ledger_id']]);if(!(int)($debtLedger['active']??1))throw new Fault('This receivable or payable account is archived.');
    if(($type==='borrow'||$type==='repay')!==$borrowed)throw new Fault('This action does not match the obligation direction.');
    if(in_array($type,['repay','collect'],true)){ $bal=$c->balance($h,(int)$debt['ledger_id']);$outstanding=$borrowed?bcsub('0',$bal,6):$bal;if(bccomp($amount,$outstanding,6)>0)throw new Fault('Payment exceeds remaining principal.'); }
    $cashDebit=in_array($type,['borrow','collect'],true);$lines=[$line((int)$account['ledger_id'],$cashDebit?$amount:'0',$cashDebit?'0':$amount),$line((int)$debt['ledger_id'],$cashDebit?'0':$amount,$cashDebit?$amount:'0')];
