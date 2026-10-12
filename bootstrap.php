@@ -1,9 +1,13 @@
 <?php
 declare(strict_types=1);
+if(is_file(__DIR__.'/vendor/autoload.php'))require_once __DIR__.'/vendor/autoload.php';
 spl_autoload_register(static function(string $class):void {
  $map=[
+  'ReadyFinance\\StatementReader'=>'app/Modules/Import/StatementReader.php',
+  'ReadyFinance\\ImportService'=>'app/Modules/Import/ImportService.php',
   'ReadyFinance\\Core'=>'app/Shared/Core.php',
   'ReadyFinance\\Fault'=>'app/Shared/Core.php',
+  'ReadyFinance\\ChartService'=>'app/Modules/Accounting/ChartService.php',
   'ReadyFinance\\Accounting'=>'app/Modules/Accounting/Accounting.php',
   'ReadyFinance\\Finance'=>'app/Application/Finance.php',
   'ReadyFinance\\Http'=>'app/Http/Http.php',

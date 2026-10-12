@@ -1,5 +1,7 @@
 # Ready Personal Finance release 0.1.0
 
+Historical release report. Deployment and empty-installation statements below describe the original verification, not current live state. See RELEASE_030.md and the v0.3.0 update guide for the current implementation and validation.
+
 Prepared and verified on 11 October 2026. This release implements the first usable local financial slice of the master specification. It does not claim completion of every foundation criterion or future phase.
 
 ## Deployment

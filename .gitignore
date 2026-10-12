@@ -2,3 +2,6 @@ config/local.php
 storage/*
 !storage/.gitkeep
 *.rpf
+
+vendor/
+config/web-setup.php

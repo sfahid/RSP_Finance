@@ -14,11 +14,20 @@ final class Http {
    if($route==='login'&&$method==='POST'){$email=strtolower(trim((string)($p['email']??'')));$key=hash('sha256',($_SERVER['REMOTE_ADDR']??'').'|'.$email);$a=$c->one('SELECT attempts,UNIX_TIMESTAMP(last_at) stamp FROM login_attempts WHERE key_hash=?',[$key]);if($a&&$a['attempts']>=8&&time()-$a['stamp']<900)throw new Fault('Too many attempts. Try again in 15 minutes.',429);$u=$c->one('SELECT u.*,m.household_id,m.role FROM users u JOIN household_memberships m ON m.user_id=u.id AND m.active=1 WHERE u.email=? LIMIT 1',[$email]);if(!$u||!password_verify((string)($p['password']??''),$u['password_hash'])){$c->query('INSERT INTO login_attempts VALUES(?,1,UTC_TIMESTAMP(6)) ON DUPLICATE KEY UPDATE attempts=IF(last_at<UTC_TIMESTAMP()-INTERVAL 15 MINUTE,1,attempts+1),last_at=UTC_TIMESTAMP(6)',[$key]);throw new Fault('Email or password is incorrect.',401);}$c->query('DELETE FROM login_attempts WHERE key_hash=?',[$key]);session_regenerate_id(true);$_SESSION['uid']=$u['id'];$_SESSION['hid']=$u['household_id'];self::json(['ok'=>true]);return;}
    if(!isset($_SESSION['uid'],$_SESSION['hid']))throw new Fault('Please sign in.',401);$h=(int)$_SESSION['hid'];$uid=(int)$_SESSION['uid'];$user=$c->one('SELECT u.*,m.role FROM users u JOIN household_memberships m ON m.user_id=u.id WHERE u.id=? AND m.household_id=? AND m.active=1',[$uid,$h]);if(!$user)throw new Fault('Access was revoked.',403);
    if($route==='logout'&&$method==='POST'){$_SESSION=[];session_regenerate_id(true);self::json(['ok'=>true]);return;}
+   if(in_array($route,['chart','chart-ledger'],true)&&$method==='GET'){$chart=new ChartService($c);$from=(string)($_GET['from']??substr($c->today($h),0,4).'-01-01');$to=(string)($_GET['to']??$c->today($h));self::json($route==='chart'?$chart->report($h,$from,$to):$chart->ledger($h,(string)($_GET['uuid']??''),$from,$to));return;}
+   if(in_array($route,['imports','import-view'],true)&&$method==='GET'){if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow statement imports.',403);$i=new ImportService($c);self::json($route==='imports'?$i->listing($h):$i->view($h,(string)($_GET['uuid']??'')));return;}
    if($route==='snapshot'&&$method==='GET'){self::json($f->snapshot($h,$user));return;}
    if($route==='document'&&$method==='GET'){$d=$c->scope('documents',$_GET['uuid']??'',$h);$file=$c->config['storage'].'/documents/'.$d['storage_key'];if(!is_file($file))throw new Fault('The file is unavailable.',404);header('Content-Type: '.$d['mime']);header('Content-Disposition: attachment; filename="'.rawurlencode($d['filename']).'"');readfile($file);return;}
    if($method!=='POST')throw new Fault('Unknown route.',404);if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow this action.',403);
    $key=$_SERVER['HTTP_IDEMPOTENCY_KEY']??'';
    switch($route){
+    case 'chart-upgrade':if($user['role']!=='owner')throw new Fault('Only the owner can enable the chart.',403);$r=(new ChartService($c))->upgrade();break;
+    case 'chart-create':$r=(new ChartService($c))->create($h,$uid,$p,$key);break;
+    case 'journal':$r=(new Accounting($c))->postJournal($h,$uid,$p,$key);break;
+    case 'import-upgrade':if($user['role']!=='owner')throw new Fault('Only the owner can enable imports.',403);$r=(new ImportService($c))->upgrade();break;
+    case 'import-upload':$r=(new ImportService($c))->upload($h,$uid,$_FILES['file']??[],(string)($p['account_uuid']??''),(string)($p['sheet']??''));break;
+    case 'import-map':$r=(new ImportService($c))->map($h,$uid,(string)($p['uuid']??''),$p['mapping']??[],(string)($p['date_format']??'dmy'));break;
+    case 'import-commit':$r=(new ImportService($c))->commit($h,$uid,(string)($p['uuid']??''),$p['choices']??[],($p['acknowledged']??false)===true);break;
     case 'transaction':$r=(new Accounting($c))->post($h,$uid,$p,$key);break;
     case 'reverse':$r=(new Accounting($c))->reverse($h,$uid,$p['uuid']??'',Core::date($p['date']??''),Core::text($p['reason']??'',400),$key);break;
     case 'create':$r=$f->create($h,$uid,$p['kind']??'',$p,$key);break;
