@@ -12,7 +12,9 @@ final class TransactionEditingService {
   if($splits){$p+=$splits[0];if(count($splits)>1)$p['splits']=$splits;}
   $bill=$c->one('SELECT b.uuid FROM bill_allocations ba JOIN bills b ON b.id=ba.bill_id AND b.household_id=ba.household_id WHERE ba.household_id=? AND ba.transaction_id=? AND ba.amount>0',[$h,$t['id']]);if($bill)$p['bill_uuid']=$bill['uuid'];
   $p['lines']=array_map(fn($r)=>['account_uuid'=>$r['ledger_uuid'],'debit'=>$r['debit'],'credit'=>$r['credit']],$rows);
-  return ['transaction'=>$t,'payload'=>$p];
+  $items=$c->all('SELECT l.name,l.class,jl.debit,jl.credit,m.name member_name,ca.name category_name,jl.project FROM journal_lines jl JOIN journal_entries j ON j.id=jl.journal_id AND j.household_id=jl.household_id JOIN ledger_accounts l ON l.id=jl.ledger_id AND l.household_id=jl.household_id LEFT JOIN members m ON m.id=jl.member_id AND m.household_id=jl.household_id LEFT JOIN categories ca ON ca.id=jl.category_id AND ca.household_id=jl.household_id WHERE j.transaction_id=? AND jl.household_id=? ORDER BY jl.id',[$t['id'],$h]);
+  $replacement=(new AccountManagementService($c))->ready()?$c->one('SELECT uuid FROM transactions WHERE household_id=? AND replaces_id=? ORDER BY id DESC LIMIT 1',[$h,$t['id']]):null;
+  return ['transaction'=>$t,'payload'=>$p,'line_items'=>$items,'splits'=>$splits,'replacement_uuid'=>$replacement['uuid']??null];
  }
  public function edit(int $h,int $u,array $input,string $key):array {
   if(!(new AccountManagementService($this->c))->ready())throw new Fault('Enable editing and review tools first.');

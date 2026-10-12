@@ -1,0 +1,11 @@
+# Ready Personal Finance — release 0.3.3
+
+Overview now includes an account balance list; clicking an account opens its dedicated ledger. Money account name/balance cards and category names open the same page. Chart leaf Ledger links also open this full page instead of appending a read-only list beneath the chart.
+
+The ledger starts with the earliest entry by default and displays the complete journal history through pages of 50, without the earlier 1,000-entry cap. Account switching, From/To dates, description search, newest/oldest ordering and first/previous/next/last controls make navigation explicit. Opening, debit/credit totals, closing and running balances are calculated from journal lines. Search never removes other transactions from balance calculations. Archived posting accounts remain readable; groups are report totals rather than posting ledgers.
+
+Every row and transaction name opens a details dialog with named debit/credit accounts, member/project information and split tags. Current entries offer Edit for owners/managers. Saving uses the existing audited reversal/replacement engine and reloads the same ledger/filter/page. Superseded entries link to their corrected entry and remain visible with reversals in complete history. Viewer roles can inspect ledgers and details but cannot edit. Browser and in-app Back restore the originating dashboard; account ledger URLs use a hash for refresh/deep linking without server rewrite changes.
+
+No new migration is needed on a fully enabled 0.3.2 installation. The new service uses window functions supported by the MySQL 8 / MariaDB 10.6+ hosting target. Retain private configuration/storage and public index.php/.htaccess when uploading this complete update. Earlier statement-import, receivable/payable, archive and editing features are included. This is an upload package; Bluehost has not been changed.
+
+Validation includes an isolated account with more than 1,000 entries, page continuity, full closing reconciliation, newest-first balances, date-filter opening, literal-text search, correction history and cross-household denial. The supplied ledger/API tests are synthetic-only. Current checks and browser observations are recorded in the accompanying update guide.

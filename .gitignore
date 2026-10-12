@@ -5,3 +5,6 @@ storage/*
 
 vendor/
 config/web-setup.php
+work/
+outputs/
+*.log

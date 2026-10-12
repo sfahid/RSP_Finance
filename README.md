@@ -1,6 +1,6 @@
 # Ready Personal Finance
 
-Working local WAMP release 0.3.2. PHP 8.3+ with PDO MySQL, BCMath, OpenSSL, Fileinfo and Mbstring. MySQL 8.3 was tested on this machine. Update the installed runtime to a maintained patched release before wider household use.
+Working local WAMP release 0.3.3. PHP 8.3+ with PDO MySQL, BCMath, OpenSSL, Fileinfo and Mbstring. MySQL 8.3 was tested on this machine; the ledger targets MySQL 8 or MariaDB 10.6+. Update the installed runtime to a maintained patched release before wider household use.
 
 ## Run
 
@@ -24,7 +24,7 @@ Run `php bin/scheduler.php` from Windows Task Scheduler to generate due recurrin
 
 ## Known scope limits
 
-This is the first working vertical release, not the entire 45-section master specification. Foreign currencies, typed permissions and restricted child access, invitations, draft editing, correction replacement, contacts, dedicated project records, tag reporting, advanced budget rollover, fund auto-consumption, interest amortization, committees, assets, investments, market net worth, universal notes/entity links, worker queue/listeners, additional report exports, notifications, encrypted document storage at rest, commercial licensing, cloud sync, AI/OCR and phone offline writes remain to be implemented. Installable PWA with Android and iPhone guidance, PNG icons, and a public-asset-only service worker is included. Offline navigation displays a connection screen; financial records and API responses are never cached. Use trusted HTTPS for phone installation. See docs/BLUEHOST_DEPLOYMENT.md for the hosting package. Sensitive documents are protected by authenticated downloads and host permissions, not per-document encryption or malware scanning in this release.
+This is the first working vertical release, not the entire 45-section master specification. Foreign currencies, typed permissions and restricted child access, invitations, draft editing, contacts, dedicated project records, tag reporting, advanced budget rollover, fund auto-consumption, interest amortization, committees, assets, investments, market net worth, universal notes/entity links, worker queue/listeners, additional report exports, notifications, encrypted document storage at rest, commercial licensing, cloud sync, AI/OCR and phone offline writes remain to be implemented. Installable PWA with Android and iPhone guidance, PNG icons, and a public-asset-only service worker is included. Offline navigation displays a connection screen; financial records and API responses are never cached. Use trusted HTTPS for phone installation. See docs/BLUEHOST_DEPLOYMENT.md for the hosting package. Sensitive documents are protected by authenticated downloads and host permissions, not per-document encryption or malware scanning in this release.
 
 Financial changes use exact decimal arithmetic; UI formatting alone uses JavaScript numeric values. Journal lines are immutable in the application. Host/database administrators can still alter underlying storage. Cash accounts may go below zero; reservation shortfalls must be reviewed. Reversal of a disbursement with dependent principal repayments is blocked until those repayments are reversed. Future commitments are entered as bills rather than posted future transactions. The database tables are an initial migration rather than the final domain map. Do not treat all foundation acceptance criteria as passed until the remaining scope is implemented and verified.
 
@@ -43,3 +43,7 @@ Uncategorized income / expense are selectable posting subaccounts. Money → Nee
 ## Statement review 0.3.2
 
 Archive/restore unwanted uploads, hide reviewed rows, select chart receivables/payables or create an empty person account directly in statement review. On-behalf payments and money held for someone use principal movements rather than income/expenses. See `docs/RELEASE_032.md` and the supplied Readysols update guide. Already enabled 0.3.1 installations need no new schema migration.
+
+## Full account ledgers 0.3.3
+
+Tap an account in Overview or Money to open its complete paged ledger. Categories and chart posting accounts open the same page. Switch accounts, filter dates or descriptions, and follow debit/credit and running balances across pages of 50 without a history cutoff. Search leaves financial totals unchanged. View named journal entries and edit current transactions through the existing correction engine; saving keeps the ledger position and filters. Mobile rows provide large View/Edit buttons, and Back returns to the originating dashboard. See `docs/RELEASE_033.md`. Fully enabled 0.3.2 installations require no new migration.

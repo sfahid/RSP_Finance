@@ -3,6 +3,7 @@ declare(strict_types=1);
 if(is_file(__DIR__.'/vendor/autoload.php'))require_once __DIR__.'/vendor/autoload.php';
 spl_autoload_register(static function(string $class):void {
  $map=[
+  'ReadyFinance\\LedgerService'=>'app/Modules/Accounting/LedgerService.php',
   'ReadyFinance\\AccountManagementService'=>'app/Modules/Money/AccountManagementService.php',
   'ReadyFinance\\TransactionEditingService'=>'app/Modules/Accounting/TransactionEditingService.php',
   'ReadyFinance\\StatementReader'=>'app/Modules/Import/StatementReader.php',

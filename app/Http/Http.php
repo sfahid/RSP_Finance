@@ -15,6 +15,7 @@ final class Http {
    if(!isset($_SESSION['uid'],$_SESSION['hid']))throw new Fault('Please sign in.',401);$h=(int)$_SESSION['hid'];$uid=(int)$_SESSION['uid'];$user=$c->one('SELECT u.*,m.role FROM users u JOIN household_memberships m ON m.user_id=u.id WHERE u.id=? AND m.household_id=? AND m.active=1',[$uid,$h]);if(!$user)throw new Fault('Access was revoked.',403);
    if($route==='logout'&&$method==='POST'){$_SESSION=[];session_regenerate_id(true);self::json(['ok'=>true]);return;}
    if($route==='transaction-details'&&$method==='GET'){self::json((new TransactionEditingService($c))->details($h,(string)($_GET['uuid']??'')));return;}
+   if($route==='account-ledger'&&$method==='GET'){self::json((new LedgerService($c))->view($h,$_GET));return;}
    if(in_array($route,['chart','chart-ledger'],true)&&$method==='GET'){$chart=new ChartService($c);$from=(string)($_GET['from']??substr($c->today($h),0,4).'-01-01');$to=(string)($_GET['to']??$c->today($h));self::json($route==='chart'?$chart->report($h,$from,$to):$chart->ledger($h,(string)($_GET['uuid']??''),$from,$to));return;}
    if(in_array($route,['imports','import-view'],true)&&$method==='GET'){if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow statement imports.',403);$i=new ImportService($c);self::json($route==='imports'?$i->listing($h,($_GET['archived']??'0')==='1'):$i->view($h,(string)($_GET['uuid']??'')));return;}
    if($route==='snapshot'&&$method==='GET'){self::json($f->snapshot($h,$user));return;}
