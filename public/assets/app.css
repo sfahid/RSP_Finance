@@ -8,3 +8,25 @@
 @media(max-width:767px){.row-text strong,.row-end strong{font-size:16px;overflow-wrap:anywhere}.subtitle{font-size:16px}.header>.btn{font-size:14px}}
 
 .install-app{position:fixed;right:16px;bottom:88px;z-index:25;padding:10px 16px;border:1px solid #175e52;border-radius:24px;background:#fff;color:#175e52;font:600 14px system-ui;box-shadow:0 3px 16px #0002}.install-app[hidden]{display:none}#install-help{max-width:440px;padding:24px;border:0;border-radius:18px}#install-help p{line-height:1.6}
+
+/* Phone experience: readable controls, app navigation and bottom-sheet forms. */
+@media(max-width:767px){
+ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+ body{font-size:16px;overscroll-behavior-y:none}
+ .shell{padding-left:16px;padding-right:16px}
+ .header{flex-wrap:wrap}.header>.btn[data-action="quick"]{display:none}
+ .topbar{height:64px;gap:12px}.search{width:calc(100% - 50px)}
+ .search input{font-size:16px}.header h1{font-size:28px}
+ .btn,input,select,textarea{font-size:16px;min-height:48px}
+ .bottomnav button{font-size:12px;min-width:56px;min-height:56px}
+ .bottomnav{padding-top:9px;height:calc(80px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px #173a3308}
+ .row{min-height:64px}.chipbar button{min-height:44px;font-size:14px}
+ dialog#modal{position:fixed;inset:auto 0 0;margin:0;width:100%;max-width:none;max-height:90dvh;border-radius:24px 24px 0 0;padding:24px 20px calc(20px + env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain}
+ dialog#modal::backdrop{background:#102a2666}
+ .modal-footer{bottom:calc(-20px - env(safe-area-inset-bottom));padding:16px 0 calc(12px + env(safe-area-inset-bottom));gap:12px}
+ .modal-footer .btn{flex:1;min-height:50px}
+ .field label{font-size:15px}.field input,.field select,.field textarea{width:100%;min-width:0}
+ .install-app{bottom:calc(96px + env(safe-area-inset-bottom))}
+ .footer-note{font-size:12px}
+}
+
