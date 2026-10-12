@@ -1,6 +1,6 @@
 # Ready Personal Finance
 
-Working local WAMP release 0.1.0. PHP 8.3+ with PDO MySQL, BCMath, OpenSSL, Fileinfo and Mbstring. MySQL 8.3 was tested on this machine. Update the installed runtime to a maintained patched release before wider household use.
+Working local WAMP release 0.2.0. PHP 8.3+ with PDO MySQL, BCMath, OpenSSL, Fileinfo and Mbstring. MySQL 8.3 was tested on this machine. Update the installed runtime to a maintained patched release before wider household use.
 
 ## Run
 
@@ -18,7 +18,7 @@ Run `php bin/scheduler.php` from Windows Task Scheduler to generate due recurrin
 
 ## Known scope limits
 
-This is the first working vertical release, not the entire 45-section master specification. Foreign currencies, typed permissions and restricted child access, invitations, draft editing, correction replacement, contacts, hierarchical categories, dedicated project records, tag reporting, advanced budget rollover, fund auto-consumption, interest amortization, committees, assets, investments, market net worth, universal notes/entity links, worker queue/listeners, advanced reports, notifications, encrypted document storage at rest, commercial licensing, cloud sync, AI/OCR and phone offline writes remain to be implemented. There is no service-worker caching yet; the manifest is preparatory. Use trusted HTTPS before phone PWA deployment. Sensitive documents are protected by authenticated downloads and host permissions, not per-document encryption or malware scanning in this release.
+This is the first working vertical release, not the entire 45-section master specification. Foreign currencies, typed permissions and restricted child access, invitations, draft editing, correction replacement, contacts, hierarchical categories, dedicated project records, tag reporting, advanced budget rollover, fund auto-consumption, interest amortization, committees, assets, investments, market net worth, universal notes/entity links, worker queue/listeners, advanced reports, notifications, encrypted document storage at rest, commercial licensing, cloud sync, AI/OCR and phone offline writes remain to be implemented. Installable PWA with Android and iPhone guidance, PNG icons, and a public-asset-only service worker is included. Offline navigation displays a connection screen; financial records and API responses are never cached. Use trusted HTTPS for phone installation. See docs/BLUEHOST_DEPLOYMENT.md for the hosting package. Sensitive documents are protected by authenticated downloads and host permissions, not per-document encryption or malware scanning in this release.
 
 Financial changes use exact decimal arithmetic; UI formatting alone uses JavaScript numeric values. Journal lines are immutable in the application. Host/database administrators can still alter underlying storage. Cash accounts may go below zero; reservation shortfalls must be reviewed. Reversal of a disbursement with dependent principal repayments is blocked until those repayments are reversed. Future commitments are entered as bills rather than posted future transactions. The database tables are an initial migration rather than the final domain map. Do not treat all foundation acceptance criteria as passed until the remaining scope is implemented and verified.
 

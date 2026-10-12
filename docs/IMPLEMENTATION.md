@@ -33,3 +33,11 @@ The master specification remains the canonical design. This implementation recor
 ## Artifact status
 
 The editable master DOCX was generated with 45 sections. Its contents were reviewed, but automatic Word page rendering could not complete on this host; pagination has not been visually verified. No available tool confirmed saving to the user's ChatGPT Library. The source package includes the same master text in Markdown for development and version control.
+
+
+## Release 0.2.0 — mobile installation and Bluehost package
+Installable PWA assets, browser installation prompt and iPhone/Android guidance are included. The service worker stores only public assets and shows an offline connection page; no financial API responses, authenticated HTML, documents or backups are cached. Local deployment updated. Bluehost shared-hosting preflight, empty database installer and private CLI owner setup are included. The 33 accounting checks passed again; cache policy checks and hosted setup refusal/owner checks passed. Physical phone installation and live Readysols hosting are not verified. See BLUEHOST_DEPLOYMENT.md.
+
+
+## Release 0.2.0 — mobile installation and Bluehost package
+Installable PWA assets, browser installation prompt and iPhone/Android guidance are included. The service worker stores only public assets and shows an offline connection page; no financial API responses, authenticated HTML, documents or backups are cached. Local deployment updated. Bluehost shared-hosting preflight, empty database installer and private CLI owner setup are included. The 33 accounting checks passed again; cache policy checks and hosted setup refusal/owner checks passed. Physical phone installation and live Readysols hosting are not verified. See BLUEHOST_DEPLOYMENT.md.

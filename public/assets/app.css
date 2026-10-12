@@ -6,3 +6,5 @@
 @media(prefers-reduced-motion:no-preference){.card{animation:arrive .3s ease both}@keyframes arrive{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}}
 
 @media(max-width:767px){.row-text strong,.row-end strong{font-size:16px;overflow-wrap:anywhere}.subtitle{font-size:16px}.header>.btn{font-size:14px}}
+
+.install-app{position:fixed;right:16px;bottom:88px;z-index:25;padding:10px 16px;border:1px solid #175e52;border-radius:24px;background:#fff;color:#175e52;font:600 14px system-ui;box-shadow:0 3px 16px #0002}.install-app[hidden]{display:none}#install-help{max-width:440px;padding:24px;border:0;border-radius:18px}#install-help p{line-height:1.6}
