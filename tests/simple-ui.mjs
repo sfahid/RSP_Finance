@@ -43,3 +43,13 @@ run('simpleState.partyHistory=false');check(!run('txRows([{uuid:"old",descriptio
 check(run('simpleMore()').includes('Income &amp; expense heads'),'Selectable income and expense heads remain manageable');
 check(run("['home','money','parties','transactions','bills','more','categories','settings','reports','assets','documents'].every(p=>{page=p;return content().length>20;})"),'Every daily route renders without references to retired planning UI');
 console.log(count+' simple UI DOM checks passed (not a browser layout test).');
+
+check(run('simpleAccounts()').includes('Chart of accounts')&&run('simpleAccounts()').includes('Journal entry'),'Accounts has direct chart and journal access');
+check(run('simpleMore()').includes('Chart of accounts')&&run('simpleMore()').includes('Journal entry'),'Mobile More exposes chart and journal');
+check(run("JSON.stringify(journalAmounts([{debit:'0.10',credit:'0'},{debit:'0.20',credit:'0'},{debit:'0',credit:'0.30'}]))")==='{"debit":30,"credit":30,"difference":0}','Journal totals use exact minor units for fractional splits');
+for(const value of ['-1','0.001','NaN','1e3']){let rejected=false;try{run('journalCents('+JSON.stringify(value)+')');}catch{rejected=true;}check(rejected,'Invalid journal amount rejected: '+value);}
+run("chartState.report={accounts:[{uuid:'bank',name:'Bank',class:'asset',is_group:0,active:1},{uuid:'group',name:'Assets',class:'asset',is_group:1,active:1},{uuid:'old',name:'Archived',class:'expense',is_group:0,active:0}]}");
+check(run('journalLine(0)').includes('Choose account…')&&!run('journalLine(0)').includes('value="group"')&&!run('journalLine(0)').includes('value="old"'),'Journal requires selectable posting accounts, excluding groups and archived choices');
+check(run("journalLine(0,{account_uuid:'old',debit:'50.300000',credit:'0.000000'})").includes('value="50.30"'),'Existing journal edit formats database decimals without invalid precision');
+run("state.user.role='viewer'");check(!run('simpleAccounts()').includes('data-action="simple-journal"')&&!run('simpleMore()').includes('data-action="simple-journal"'),'Viewer navigation has no journal posting action');
+console.log('10 additional accounting UI checks passed.');
