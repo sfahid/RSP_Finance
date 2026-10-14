@@ -25,9 +25,9 @@ run('ledgerState.uuid="bank-abc";ledgerState.kind="money";ledgerState.data={acco
 check(run('simpleAccounts()').includes('data-action="simple-entry" data-id="bank-abc"')&&run('ledgerView()').includes('Money in')&&run('ledgerView()').includes('Money out')&&!run('ledgerBalance(100)').includes('Dr'),'Bank/cash account exposes direct recording and readable money-in/out ledger');
 run('simpleEntry("bank-abc")');check(nodes.get('f-account_uuid').value==='bank-abc','Bank ledger recording preselects Bank ABC');
 nodes.get('f-entry_kind').value='party_out';nodes.get('#action-form [type="submit"]').listeners.click();
-check(context.lastForm.title==='Record payment from bank / cash'&&nodes.get('f-account_uuid').value==='bank-abc','Selecting party payment stays in the bank/cash workflow');
+check(context.lastForm.title==='Record payment'&&nodes.get('f-account_uuid').value==='bank-abc','Selecting party payment stays in the bank/cash workflow');
 nodes.get('f-party_uuid').value='party-a';nodes.get('f-party_uuid').listeners.change();
-check(nodes.get('f-receivable_uuid').value==='a-r','Paying on behalf debits the selected party receivable');
+check(nodes.get('f-receivable_uuid').value==='a-r'&&nodes.get('party-side-fields').innerHTML.includes('class="hidden"'),'Paying on behalf auto-selects the single receivable and hides the extra selector');
 check(!nodes.get('f-receivable_uuid').options.some(o=>o[1]==='b-r'),'Recipient accounts cannot replace on-behalf party accounts');
 check(nodes.get('f-other_party_uuid').options.some(o=>o[1]==='party-b'),'Another person/business can be selected as recipient');
 await context.lastForm.submit({party_uuid:'party-a',receivable_uuid:'a-r',action:'pay_party',account_uuid:'bank-abc',other_party_uuid:'party-b',amount:'50',date:'2026-10-14',description:'Paid B on behalf of A'},'test-key');
