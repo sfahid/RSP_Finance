@@ -53,3 +53,20 @@ check(run('journalLine(0)').includes('Choose account…')&&!run('journalLine(0)'
 check(run("journalLine(0,{account_uuid:'old',debit:'50.300000',credit:'0.000000'})").includes('value="50.30"'),'Existing journal edit formats database decimals without invalid precision');
 run("state.user.role='viewer'");check(!run('simpleAccounts()').includes('data-action="simple-journal"')&&!run('simpleMore()').includes('data-action="simple-journal"'),'Viewer navigation has no journal posting action');
 console.log('10 additional accounting UI checks passed.');
+
+run("state.user.role='owner';state.parties_listing.unlinked=[{uuid:'legacy-r',account_kind:'receivable',name:'Legacy receivable',active:1},{uuid:'legacy-p',account_kind:'payable',name:'Legacy payable',active:1},{uuid:'archived-r',account_kind:'receivable',name:'Archived receivable',active:0}];newParty()");
+for(const side of ['receivable','payable']){
+ const tag=context.lastForm.body.match(new RegExp('<select[^>]*name="'+side+'_uuid"[^>]*>'))[0];
+ check(!tag.includes('required'),'Create empty '+side+' account is optional for native form validation');
+ check(nodes.get('f-'+side+'_uuid').options.filter(o=>o[1]==='').length===1,'Single clearly labelled blank '+side+' choice');
+}
+check(!nodes.get('f-receivable_uuid').options.some(o=>o[1]==='archived-r'),'Archived accounts cannot be chosen while adding a party');
+await context.lastForm.submit({name:'New demo party',kind:'person',receivable_uuid:'',payable_uuid:''},'new-party-key');
+check(context.posted.route==='party-change'&&context.posted.payload.action==='create'&&context.posted.payload.receivable_uuid===''&&context.posted.payload.payable_uuid==='','Blank optional accounts submit the new-party command');
+run("partyLink('legacy-r')");await context.lastForm.submit({party_uuid:'party-a',reason:'Assign existing receivable'},'link-party-key');
+check(context.posted.payload.action==='link'&&context.posted.payload.ledger_uuid==='legacy-r'&&context.posted.payload.uuid==='party-a','Existing account assignment selects a real party');
+run("partyEntryForm('out',{party_uuid:'party-a',account_uuid:'bank-abc',receivable_uuid:'a-r',edit_uuid:'existing-entry',row_version:4})");nodes.get('f-party_uuid').value='party-b';nodes.get('f-party_uuid').listeners.change();
+check(nodes.get('f-receivable_uuid').value==='b-r','Replacing transaction party selects that party receivable instead of the old party account');
+await context.lastForm.submit({party_uuid:'party-b',receivable_uuid:'b-r',action:'pay_party',account_uuid:'bank-abc',amount:'50',date:'2026-10-14',reason:'Correct party'},'replace-party-key');
+check(context.posted.route==='party-transaction'&&context.posted.payload.party_uuid==='party-b'&&context.posted.payload.edit_uuid==='existing-entry'&&context.posted.payload.row_version===4,'Party replacement submits an audited transaction correction');
+console.log('9 party form regression checks passed.');
