@@ -70,3 +70,14 @@ check(nodes.get('f-receivable_uuid').value==='b-r','Replacing transaction party 
 await context.lastForm.submit({party_uuid:'party-b',receivable_uuid:'b-r',action:'pay_party',account_uuid:'bank-abc',amount:'50',date:'2026-10-14',reason:'Correct party'},'replace-party-key');
 check(context.posted.route==='party-transaction'&&context.posted.payload.party_uuid==='party-b'&&context.posted.payload.edit_uuid==='existing-entry'&&context.posted.payload.row_version===4,'Party replacement submits an audited transaction correction');
 console.log('9 party form regression checks passed.');
+
+run("page='ledger';ledgerState.kind='money';ledgerState.uuid='bank-abc';globalThis.incomingTransfer={account_uuid:'other-bank',to_account_uuid:'bank-abc',amount:'205000.00',bank_movements:[{account_uuid:'other-bank',net:'-205000.000000'},{account_uuid:'bank-abc',net:'205000.000000'}]}");
+check(run("partyBankSide(incomingTransfer,'transfer').direction")==='in','Incoming transfer uses the reviewed bank debit, not the transfer type');
+check(run("partyBankSide(incomingTransfer,'transfer').account_uuid")==='bank-abc','Party conversion keeps the bank receiving the transfer');
+check(run("partyBankSide(incomingTransfer,'transfer').amount")==='205000.00','Incoming bank amount remains unchanged');
+run("state.accounts.push({uuid:'other-bank',ledger_id:11,name:'Other bank',active:1,type:'bank'});ledgerState.uuid='other-bank'");check(run("partyBankSide(incomingTransfer,'transfer').direction")==='out','The same transfer uses money out when editing its sending bank');
+run("ledgerState.kind='ledger';ledgerState.data.account.id=10");check(run("partyBankSide(incomingTransfer,'transfer').direction")==='in','Chart ledger context also chooses the receiving bank');
+run("partyEntryForm('in',{account_uuid:'bank-abc',amount:'205000.00',edit_uuid:'incoming-transfer',row_version:1})");check(context.lastForm.body.includes('Received into bank / cash')&&!context.lastForm.body.includes('Paid from bank / cash'),'Incoming correction exposes receipt labels');
+check(nodes.get('f-action').options.some(o=>o[1]==='receive_party')&&nodes.get('f-action').options.some(o=>o[1]==='receive_repayment')&&!nodes.get('f-action').options.some(o=>o[1]==='pay_party'),'Incoming correction offers held/borrowed money and repayment collection only');
+console.log('7 incoming-transfer UI regression checks passed.');
+run("page='transactions';incomingTransfer.statement_accounts=['bank-abc']");check(run("partyBankSide(incomingTransfer,'transfer').direction")==='in'&&run("partyBankSide(incomingTransfer,'transfer').account_uuid")==='bank-abc','Transactions list uses the matched receiving bank when no ledger context exists');

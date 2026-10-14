@@ -12,6 +12,11 @@ final class TransactionEditingService {
   if($splits){$p+=$splits[0];if(count($splits)>1)$p['splits']=$splits;}
   $bill=$c->one('SELECT b.uuid FROM bill_allocations ba JOIN bills b ON b.id=ba.bill_id AND b.household_id=ba.household_id WHERE ba.household_id=? AND ba.transaction_id=? AND ba.amount>0',[$h,$t['id']]);if($bill)$p['bill_uuid']=$bill['uuid'];
   $p['lines']=array_map(fn($r)=>['account_uuid'=>$r['ledger_uuid'],'debit'=>$r['debit'],'credit'=>$r['credit']],$rows);
+  // A transfer has an outgoing and incoming bank side. Editors must use the
+  // actual posting for the bank being reviewed, not infer direction from type.
+  $movements=[];foreach($rows as $row)if($row['money_uuid']){$id=$row['money_uuid'];$movements[$id]??=['account_uuid'=>$id,'debit'=>'0','credit'=>'0','net'=>'0'];foreach(['debit','credit'] as $side)$movements[$id][$side]=bcadd($movements[$id][$side],$row[$side],6);$movements[$id]['net']=bcsub($movements[$id]['debit'],$movements[$id]['credit'],6);}
+  $p['bank_movements']=array_values($movements);
+  $p['statement_accounts']=$c->query("SELECT COUNT(*) FROM schema_migrations WHERE version='004_statement_import'")->fetchColumn()?array_column($c->all('SELECT a.uuid FROM import_links il JOIN accounts a ON a.id=il.account_id AND a.household_id=il.household_id WHERE il.household_id=? AND il.transaction_id=?',[$h,$t['id']]),'uuid'):[];
   $items=$c->all('SELECT l.name,l.class,jl.debit,jl.credit,m.name member_name,ca.name category_name,jl.project FROM journal_lines jl JOIN journal_entries j ON j.id=jl.journal_id AND j.household_id=jl.household_id JOIN ledger_accounts l ON l.id=jl.ledger_id AND l.household_id=jl.household_id LEFT JOIN members m ON m.id=jl.member_id AND m.household_id=jl.household_id LEFT JOIN categories ca ON ca.id=jl.category_id AND ca.household_id=jl.household_id WHERE j.transaction_id=? AND jl.household_id=? ORDER BY jl.id',[$t['id'],$h]);
   $replacement=(new AccountManagementService($c))->ready()?$c->one('SELECT uuid FROM transactions WHERE household_id=? AND replaces_id=? ORDER BY id DESC LIMIT 1',[$h,$t['id']]):null;
   return ['transaction'=>$t,'payload'=>$p,'line_items'=>$items,'splits'=>$splits,'replacement_uuid'=>$replacement['uuid']??null];
