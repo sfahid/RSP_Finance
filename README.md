@@ -1,53 +1,46 @@
-# Ready Personal Finance
+# Ready Personal Finance — Simple Edition 0.4.0
 
-Working local WAMP release 0.3.4. PHP 8.3+ with PDO MySQL, BCMath, OpenSSL, Fileinfo and Mbstring. MySQL 8.3 was tested on this machine; the ledger targets MySQL 8 or MariaDB 10.6+. Update the installed runtime to a maintained patched release before wider household use.
+Everyday personal finance on PHP/MySQL: income, expenses, bank/cash accounts, parties, bills/invoices and cash flow. Mobile-first, installable PWA. Solid double-entry accounting stays behind clear transaction forms.
 
-## Run
+## Daily use
 
-Point Apache only at `public/`. Run `php bin/install.php readyfinance` from the application folder with local database administrative credentials supplied through private environment variables when necessary. The installer creates a new database and dedicated runtime user and refuses to overwrite existing databases. Open the app on localhost and create your owner account. No default login or sample financial records are shipped.
+- Overview: cash/bank balances, receivables, payables, monthly income/expenses and recent entries.
+- Accounts: open any account's full ledger or record a transaction directly against that account.
+- Transactions: search all dates, filter income/expenses/Uncategorized, edit, or delete by reversal. Paginated; no 500-record search cutoff here.
+- Parties: people and businesses share one model, with both money owed to you and money you owe/hold. Net is shown for information; separate balances are never silently offset.
+- Bills & invoices: household bills and partial payments, party income/supplier invoices, private receipt/invoice attachments.
+- More: statement imports, documents, reports, income/expense heads, settings and encrypted backup. Accounting entries/reports are available under safeguards for advanced adjustments.
 
-In this machine's deployment, the private app lives at `C:\wamp64\apps\readyfinance`, and the public entry/assets live at `C:\wamp64\www\readyfinance`. Open `http://localhost/readyfinance/`. Keep database credentials in private `config/local.php` and exclude it from packages/source control.
+Budgets, savings goals, sinking funds, recurring plans and their daily navigation are retired. The scheduler generates no more bills. Their historical rows remain in the database and encrypted backups. Old reservations no longer reduce the actual cash/bank balance. Future modules are not part of this edition.
 
-## Included
+## Bank/cash party transactions
 
-Mobile navigation, dashboard, accounts and opening journals, PKR income/expenses/refunds/transfers, category splits, optional member/project/tag attribution, balanced immutable journals and reversals, bills and partial payments, monthly category budgets, principal borrowing/lending and repayments, goals/sinking funds with non-ledger reservations, recurring bill generation, members, categories, private receipt downloads, CSV transaction export, book totals, audit, period locks, and password-encrypted full-installation backups. Identity and household memberships are separate tables; this UI currently provisions one household with an owner.
+From an account or its ledger, choose Record transaction, then money out/in for a party. Select the balance party and optionally a different recipient/sender. Example: Bank ABC pays Mr. B on behalf of Mr. A. Using your own funds debits A's receivable and credits Bank ABC. Using money held for A debits A's payable and credits the bank. B is retained as recipient without inventing another balance against B.
 
-## Accounting and statement imports
+Borrowing, advancing, repaying, collecting and holding/spending funds for a party are principal movements, excluded from personal income/expenses. Party-paid personal expenses debit your selected expense head and credit the party payable without moving your cash. Income invoices debit receivable/credit income; supplier invoices debit expense/credit payable. Settle these through party receipt/payment forms, not a duplicate income/expense entry. Offset requires an explicit agreed adjustment and cannot exceed either side.
 
-More → Chart of accounts exposes Assets, Liabilities, Income, Expenses and Equity, with Receivables and Payables child groups. Create same-class parent groups and posting subaccounts; Income/Expense subaccounts are linked to the everyday category selectors and budgets. Parent groups cannot receive journal postings. Balanced journals support accruals and adjustments. Dated reports include hierarchy rollups, account ledgers, income/expense summary, balance sheet and trial balance.
+## Accounting and data preservation
 
-More → Bank statement imports stages CSV, XLSX, XLS and readable text PDF files. Review dates, mapping, row counts, totals, balances and classifications before explicit approval. Classify income, expenses, refunds, transfers, borrowing/lending and principal repayments, match existing entries, or skip. Approvals are atomic and duplicate links are scoped to each bank account. Scanned PDFs and arbitrary PDF layouts need a bank export; no OCR or external service is used. Vendor libraries are bundled in the hosting update. Owners can enable migrations 004/005 inside the app when temporary schema privileges are available.
+UUIDs plus local numeric IDs, household scope, exact decimal amounts, immutable balanced journals, audited reversal/replacement corrections, period locks, optimistic versions and idempotent commands remain. Edits retain originals; statement-linked bank amounts/dates cannot change. Statement fingerprints, links and attachments follow replacements. Delete on a posted entry means financial reversal; delete on a party/account means restorable archive after settlement.
 
-## Operations
+Party creation can reuse existing receivable/payable ledgers. Additional old accounts can be assigned to the same party. Linking never reposts, merges or changes a balance. Accounts belonging to different parties cannot be used interchangeably. No automatic name-based merging or netting is performed.
 
-Run `php bin/scheduler.php` from Windows Task Scheduler to generate due recurring bills. It creates obligations, never assumes payment. The local deployment registers an hourly task. PC shutdown delays work until the next run. Restore using `php bin/restore.php archive.rpf readyfinance_restored NEW_PRIVATE_DIRECTORY`, supplying `RPF_BACKUP_PASSWORD` privately. It refuses existing databases/directories and restores into a fresh target. The live application is never overwritten automatically. Scheduled backups and a guided restore UI remain planned.
+Migration 008_parties adds parties, party_accounts and party_entries only. Existing 0.3.4 owners enable it from Parties → Enable parties with temporary CREATE privileges. Earlier chart/editing/bill migrations remain compatible. Restore handles both pre-party backups and new backups in a fresh database; it never overwrites live books.
 
-## Known scope limits
+## Installation and operations
 
-This is the first working vertical release, not the entire 45-section master specification. Foreign currencies, typed permissions and restricted child access, invitations, draft editing, contacts, dedicated project records, tag reporting, advanced budget rollover, fund auto-consumption, interest amortization, committees, assets, investments, market net worth, universal notes/entity links, worker queue/listeners, additional report exports, notifications, encrypted document storage at rest, commercial licensing, cloud sync, AI/OCR and phone offline writes remain to be implemented. Installable PWA with Android and iPhone guidance, PNG icons, and a public-asset-only service worker is included. Offline navigation displays a connection screen; financial records and API responses are never cached. Use trusted HTTPS for phone installation. See docs/BLUEHOST_DEPLOYMENT.md for the hosting package. Sensitive documents are protected by authenticated downloads and host permissions, not per-document encryption or malware scanning in this release.
+Use PHP 8.3+ with PDO MySQL, BCMath, OpenSSL, Fileinfo and Mbstring; MySQL 8 or compatible MariaDB. Windows/WAMP and Bluehost shared hosting use the same private core and public assets. Public document root must expose only public/. Keep config/local.php and storage/ outside the public web directory. Use trusted HTTPS for hosted/mobile access.
 
-Financial changes use exact decimal arithmetic; UI formatting alone uses JavaScript numeric values. Journal lines are immutable in the application. Host/database administrators can still alter underlying storage. Cash accounts may go below zero; reservation shortfalls must be reviewed. Reversal of a disbursement with dependent principal repayments is blocked until those repayments are reversed. Future commitments are entered as bills rather than posted future transactions. The database tables are an initial migration rather than the final domain map. Do not treat all foundation acceptance criteria as passed until the remaining scope is implemented and verified.
+For a NEW installation, bin/install.php creates a new database/runtime user and refuses an existing database. For an EXISTING installation use the 0.4.0 update guide; never rerun installation/schema imports or owner creation. Configuration, installation UUID, database name, owners and financial records must remain unchanged.
+
+Bank imports support CSV/XLSX/XLS/readable text PDF, explicit review/approval, matching, skipping, duplicate detection and archive/restore. Scanned PDFs require a readable bank export. No OCR/AI service or external data transmission is used. Uploaded data is preserved as private staging rows; financial entries change only after approval.
+
+Backups include all data tables, party metadata, statement staging and private documents. Restore: bin/restore.php archive.rpf NEW_DATABASE NEW_PRIVATE_DIRECTORY, with the backup password supplied privately. Retained scheduled tasks may continue calling the scheduler but generate zero plans.
+
+PWA caches public static assets only. Sessions, API records and documents are not cached. Financial use requires a connection. Permissions allow owners/managers to write and viewers to read; only owners enable schema upgrades and create full-installation backups. Sensitive documents use authenticated private storage, not per-file encryption or malware scanning.
 
 ## Validation
 
-See `tests/integration.php` for isolated accounting fixtures. Tests must use a separate database and never add synthetic data to the production household. Source control and database backups are independent recovery mechanisms.
+Synthetic-only checks: tests/integration.php (32), tests/parties.php (60), tests/editing.php (35), tests/api-parties.mjs (29), tests/api-editing.mjs (15), tests/api-imports.mjs (15). tests/simple-ui.mjs (19 DOM logic checks) is not a rendered-browser layout test. Encrypted restore checks cover old tables, journal totals, UUIDs, files and all three party tables. PHP/JS syntax and package checksums are verified. Retired planning-only tests are removed; previous versions remain in Git history.
 
-## Account management and transaction corrections
-
-Release 0.3.2 separates Record expense / Record income from account creation, adds Edit details and Archive / Restore for money accounts, Edit name and Archive / Restore for chart leaves/groups, and Move entries for income/expense categories. Money account types may change within the asset class; credit-card classification stays fixed. Financial history and report balances survive archives. Main headings and required system accounts remain protected.
-
-Owners enable migration 006 through Enable editing & review tools after enabling the chart. Edit an existing transaction from Money: income, expenses, refunds, transfers, bills, principal loans, opening balances and balanced journals use atomic reversal-and-replacement corrections. The original remains linked to its replacement; closed periods require reopening and concurrent edits/retries are guarded. Statement-matched cash amount and date stay unchanged while classification and notes can be corrected. Attachments follow the replacement.
-
-Uncategorized income / expense are selectable posting subaccounts. Money → Needs review includes entries and journals using them, within the newest 500 transaction records. Current views hide superseded originals and reversal entries; Show correction history exposes them. Category moves handle at most 100 current entries as one atomic correction, preserve split details and cash balances, move plans, and optionally archive the source. Unlock affected periods before moving and explicitly choose Combine budgets if needed.
-
-## Statement review 0.3.2
-
-Archive/restore unwanted uploads, hide reviewed rows, select chart receivables/payables or create an empty person account directly in statement review. On-behalf payments and money held for someone use principal movements rather than income/expenses. See `docs/RELEASE_032.md` and the supplied Readysols update guide. Already enabled 0.3.1 installations need no new schema migration.
-
-## Full account ledgers 0.3.3
-
-Tap an account in Overview or Money to open its complete paged ledger. Categories and chart posting accounts open the same page. Switch accounts, filter dates or descriptions, and follow debit/credit and running balances across pages of 50 without a history cutoff. Search leaves financial totals unchanged. View named journal entries and edit current transactions through the existing correction engine; saving keeps the ledger position and filters. Mobile rows provide large View/Edit buttons, and Back returns to the originating dashboard. See `docs/RELEASE_033.md`. Fully enabled 0.3.2 installations require no new migration.
-
-## Plan management 0.3.4
-
-Budgets, bills, goals, loans/lending and recurring schedules support Edit, reversible Delete and Restore. Owners enable migration 007 using Enable plan editing in any plan screen after enabling the chart and editing tools. Bill payments and journal history remain intact. Goal deletion releases reservations; loan deletion requires a zero balance. Loan amount/payment changes use linked financial-entry corrections. Schedules can be paused and edited without changing existing bills. See `docs/RELEASE_034.md` and the Readysols update guide.
+Current limitation: rendered browser/physical-phone validation for 0.4.0 is pending because the preview runtime failed to initialize. Packages are not hosted deployments. See docs/RELEASE_040.md and the update guide.

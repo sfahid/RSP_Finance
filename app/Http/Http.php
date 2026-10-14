@@ -20,12 +20,19 @@ final class Http {
    if(in_array($route,['chart','chart-ledger'],true)&&$method==='GET'){$chart=new ChartService($c);$from=(string)($_GET['from']??substr($c->today($h),0,4).'-01-01');$to=(string)($_GET['to']??$c->today($h));self::json($route==='chart'?$chart->report($h,$from,$to):$chart->ledger($h,(string)($_GET['uuid']??''),$from,$to));return;}
    if(in_array($route,['imports','import-view'],true)&&$method==='GET'){if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow statement imports.',403);$i=new ImportService($c);self::json($route==='imports'?$i->listing($h,($_GET['archived']??'0')==='1'):$i->view($h,(string)($_GET['uuid']??'')));return;}
    if($route==='snapshot'&&$method==='GET'){self::json($f->snapshot($h,$user));return;}
+   if($route==='parties'&&$method==='GET'){self::json((new PartyService($c))->listing($h));return;}
+   if($route==='transaction-list'&&$method==='GET'){self::json((new TransactionListService($c))->view($h,$_GET));return;}
+   if($route==='party-ledger'&&$method==='GET'){self::json((new PartyService($c))->ledger($h,$_GET));return;}
+   if($route==='party-entry'&&$method==='GET'){self::json(['entry'=>(new PartyService($c))->entry($h,(string)($_GET['uuid']??''))]);return;}
    if($route==='document'&&$method==='GET'){$d=$c->scope('documents',$_GET['uuid']??'',$h);$file=$c->config['storage'].'/documents/'.$d['storage_key'];if(!is_file($file))throw new Fault('The file is unavailable.',404);header('Content-Type: '.$d['mime']);header('Content-Disposition: attachment; filename="'.rawurlencode($d['filename']).'"');readfile($file);return;}
    if($method!=='POST')throw new Fault('Unknown route.',404);if(!in_array($user['role'],['owner','manager'],true))throw new Fault('Your role does not allow this action.',403);
    $key=$_SERVER['HTTP_IDEMPOTENCY_KEY']??'';
    switch($route){
+    case 'parties-upgrade':if($user['role']!=='owner')throw new Fault('Only the owner can enable parties.',403);$r=(new PartyService($c))->upgrade();break;
+    case 'party-change':$r=(new PartyService($c))->change($h,$uid,$p,$key);break;
+    case 'party-transaction':$r=(new PartyService($c))->post($h,$uid,$p,$key);break;
     case 'planning-upgrade':if($user['role']!=='owner')throw new Fault('Only the owner can enable plan editing.',403);$r=(new PlanManagementService($c))->upgrade();break;
-    case 'plan-change':$r=(new PlanManagementService($c))->change($h,$uid,$p,$key);break;
+    case 'plan-change':if(($p['kind']??'')!=='bill')throw new Fault('Planning features have been retired.');$r=(new PlanManagementService($c))->change($h,$uid,$p,$key);break;
     case 'editing-upgrade':if($user['role']!=='owner')throw new Fault('Only the owner can enable editing tools.',403);$r=(new AccountManagementService($c))->upgrade();break;
     case 'account-update':$r=(new AccountManagementService($c))->update($h,$uid,$p,$key,true);break;
     case 'ledger-update':$r=(new AccountManagementService($c))->update($h,$uid,$p,$key);break;
@@ -44,7 +51,7 @@ final class Http {
     case 'transaction':$r=(new Accounting($c))->post($h,$uid,$p,$key);break;
     case 'reverse':$r=(new Accounting($c))->reverse($h,$uid,$p['uuid']??'',Core::date($p['date']??''),Core::text($p['reason']??'',400),$key);break;
     case 'create':$r=$f->create($h,$uid,$p['kind']??'',$p,$key);break;
-    case 'reserve':if(strlen($key)<8)throw new Fault('Command key required.');$r=$f->reserve($h,$uid,$p,$key);break;
+    case 'reserve':throw new Fault('Goals and reservations have been retired. Cash balances remain in their original accounts.');
     case 'recurring':$r=$f->runRecurring($h,$uid);break;
     case 'period':if($user['role']!=='owner')throw new Fault('Only the owner can lock periods.',403);$month=substr(Core::date(($p['month']??'').'-01'),0,7);$reason=Core::text($p['reason']??'',250);$r=$c->atomic(function()use($c,$h,$uid,$month,$reason,$p){$c->one('SELECT id FROM households WHERE id=? FOR UPDATE',[$h]);$c->query('INSERT INTO periods(household_id,month,locked,reason) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE locked=VALUES(locked),reason=VALUES(reason)',[$h,$month,!empty($p['locked'])?1:0,$reason]);$c->audit($h,$uid,'period.changed',null,['month'=>$month,'locked'=>!empty($p['locked']),'reason'=>$reason]);return ['ok'=>true];});break;
     case 'upload':$r=self::upload($c,$h,$uid);break;
